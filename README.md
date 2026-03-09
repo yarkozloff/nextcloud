@@ -57,4 +57,4 @@
 ![Photo](https://github.com/yarkozloff/nextcloud/blob/main/img/image5.png)
 ![Calendar](https://github.com/yarkozloff/nextcloud/blob/main/img/image6.png)
 ![Doom](https://github.com/yarkozloff/nextcloud/blob/main/img/image7.png)
-![VideoCall](https://github.com/yarkozloff/nextcloud/blob/main/img/image4.png)
+![VideoCall](https://github.com/yarkozloff/nextcloud/blob/main/img/image8.png)
