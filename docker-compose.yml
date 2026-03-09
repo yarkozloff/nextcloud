@@ -1,0 +1,194 @@
+services:
+  postgres:
+    deploy:
+        resources:
+          limits:
+            cpus: '2'
+            memory: 4G
+    image: postgres:16
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=***
+      - POSTGRES_PASSWORD=***
+      - POSTGRES_DB=***
+      - POSTGRES_SHARED_BUFFERS=1G
+      - POSTGRES_WORK_MEM=32MB
+      - POSTGRES_MAINTENANCE_WORK_MEM=256MB
+      - POSTGRES_EFFECTIVE_CACHE_SIZE=3G
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nextcloud_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    volumes:
+      - ./redis_data:/data
+    networks:
+      - nextcloud_network
+
+  nextcloud:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 6G
+    image: nextcloud:latest # Nextcloud Hub 26 Winter (33.0.0)
+    container_name: nextcloud
+    ports:
+      - "8080:80"
+      - "443:443"
+    volumes:
+      - ./nextcloud_data:/var/www/html
+      - ./apache2/nextcloud-ssl.conf:/etc/apache2/sites-available/nextcloud-ssl.conf
+      - ./apache2/define-limits.conf:/etc/apache2/conf-available/define-limits.conf:ro
+      - ./apache2/apache-limits.conf:/etc/apache2/conf-enabled/apache-limits.conf:ro
+      - ./apache2/remoteip.conf:/etc/apache2/conf-available/remoteip.conf
+      - ./apache2/apache2.conf:/etc/apache2/apache2.conf
+      - ./ssl:/etc/apache2/ssl
+    command: sh -c "a2enmod ssl && a2ensite nextcloud-ssl && apache2ctl -D FOREGROUND"
+    environment:
+      - APACHE_BODY_LIMIT=1073741824
+      - APACHE_MODULES=ssl headers rewrite
+      - APACHE_ENABLE_REMOTEIP=true
+      - NEXTCLOUD_ADMIN_USER=***
+      - NEXTCLOUD_ADMIN_PASSWORD=***
+      - BOT_NAME=OpenAIBot
+      - BOT_SECRET=***
+      - PHP_MEMORY_LIMIT=2G
+      - MAX_EXECUTION_TIME=1200
+      - UPLOAD_MAX_FILESIZE=10G
+      - POST_MAX_SIZE=10G
+      - OVERWRITEHOST=yarkozloff.ru
+      - OVERWRITECLIURL=https://yarkozloff.ru
+      - OVERWRITEPROTOCOL=https
+      - NEXTCLOUD_URL=https://yarkozloff.ru
+      - NEXTCLOUD_TRUSTED_DOMAINS=yarkozloff.ru
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=***
+      - POSTGRES_PASSWORD=***
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - nextcloud_network
+
+  worker:
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    image: nextcloud:latest
+    container_name: worker
+    volumes:
+      - ./nextcloud_data:/var/www/html
+    command: >
+      sh -c "cd /var/www/html &&
+      php occ background-job:worker -t 60 'OC\\TaskProcessing\\SynchronousBackgroundJob'"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=***
+      - POSTGRES_PASSWORD=***
+      - PHP_MEMORY_LIMIT=2G
+      - MAX_EXECUTION_TIME=1200
+      - OC_BACKGROUND_JOB_TIME_LIMIT=60
+      - AI_API_KEY=***
+    restart: unless-stopped
+    depends_on:
+      - nextcloud
+    networks:
+      - nextcloud_network
+
+  bot:
+    image: nextcloud-ai-bot:latest 
+    container_name: bot
+    ports:
+      - '3000:3000'
+    environment:
+      - OPENAI_API_KEY=***
+      - YANDEX_CLOUD_FOLDER_ID=***
+      - YANDEX_CLOUD_SECRET=***
+      - NEXTCLOUD_URL=https://yarkozloff.ru
+      - BOT_ID=8
+      - BOT_SECRET=***
+      - WEBHOOK_PORT=3000
+      - WEBHOOK_PATH=/webhook
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./ai_bot/bot.js:/app/bot.js
+    depends_on:
+      - nextcloud
+      - redis
+    networks:
+      - nextcloud_network
+      
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: onlyoffice
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+      - "8443:443"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_TYPE=postgres
+      - DB_NAME=onlyoffice
+      - DB_USER=***
+      - DB_PWD=***
+      - REDIS_SERVER_HOST=redis
+      - REDIS_SERVER_PORT=6379
+      - SSL_CERTIFICATE_PATH=/var/www/onlyoffice/Data/certs/cloud.pem
+      - SSL_KEY_PATH=/var/www/onlyoffice/Data/certs/cloud.key
+      - ENABLE_HTTPS=true
+      - JWT_ENABLED=true
+      - JWT_SECRET=***
+    volumes:
+      - ./onlyoffice_data:/var/www/onlyoffice/Data
+      - ./ssl:/var/www/onlyoffice/Data/certs:ro
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - nextcloud_network
+
+  coturn:
+    image: instrumentisto/coturn:latest
+    container_name: coturn
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "5349:5349/tcp"
+    environment:
+      - TURN_REALM=yarkozloff.ru
+      - TURN_LISTEN_PORT=3478
+      - TURN_EXTERNAL_IP=auto
+      - TURN_LISTEN_IP=0.0.0.0
+      - TURN_NO_TLS=false
+      - TURN_NO_DTLS=false
+      - TURN_VERBOSE=true
+      - TURN_SECRET=***
+      - TURN_MIN_PORT=49152
+      - TURN_MAX_PORT=65535
+    volumes:
+      - ./coturn/turnserver.conf:/etc/turnserver.conf
+      - ./ssl:/etc/turnssl
+    restart: unless-stopped
+    networks:
+      - nextcloud_network
+
+networks:
+  nextcloud_network:
+    driver: bridge
