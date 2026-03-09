@@ -49,4 +49,12 @@
     * Поддерживает команду /reset для очистки контекста.
     * Отвечает на сообщения, используя Yandex GPT.
 
+## Скриншоты
 ![Home](https://github.com/yarkozloff/nextcloud/blob/main/img/image1.png)
+![Talk](https://github.com/yarkozloff/nextcloud/blob/main/img/image2.png)
+![Files](https://github.com/yarkozloff/nextcloud/blob/main/img/image3.png)
+![Office](https://github.com/yarkozloff/nextcloud/blob/main/img/image4.png)
+![Photo](https://github.com/yarkozloff/nextcloud/blob/main/img/image5.png)
+![Calendar](https://github.com/yarkozloff/nextcloud/blob/main/img/image6.png)
+![Doom](https://github.com/yarkozloff/nextcloud/blob/main/img/image7.png)
+![VideoCall](https://github.com/yarkozloff/nextcloud/blob/main/img/image4.png)
