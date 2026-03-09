@@ -48,3 +48,5 @@
     * Сохраняет контекст диалога (до 10 последних сообщений).
     * Поддерживает команду /reset для очистки контекста.
     * Отвечает на сообщения, используя Yandex GPT.
+
+![Home](https://github.com/yarkozloff/nextcloud/blob/main/img/image1.png)
