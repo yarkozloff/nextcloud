@@ -1,60 +1,64 @@
-# Домашний Nextcloud
-## Описание проекта
-Проект представляет собой развёрнутый домашний Nextcloud с расширенным функционалом: интеграция OnlyOffice для работы с документами, видеозвонки через Nextcloud Talk + Coturn, AI‑ассистент на базе Mistral и чат‑бот в Nextcloud Talk с поддержкой контекста на Yandex GPT.
+# Home Nextcloud Setup
 
-## Архитектура и сетевая связанность
-Домен приобретён на Reg.ru, там же выпущен SSL‑сертификат.
-На Reg.ru настроен почтовый сервер.
-Доменное имя привязано к белому IP‑адресу роутера Keenetic.
-На роутере выполнен проброс портов для всех сервисов:
-* Nextcloud: 8080 (HTTP), 443 (HTTPS);
-* OnlyOffice: 8000 (HTTP), 8443 (HTTPS);
-* Coturn: 3478 (UDP/TCP), 5349 (TCP);
-* Бот: 3000
+## Project description
+The project is a self‑hosted Nextcloud instance with extended functionality: integration of OnlyOffice for document editing, video calls via Nextcloud Talk + Coturn, an AI assistant based on Mistral, and a chatbot in Nextcloud Talk with context support via Yandex GPT.
 
-## Логика маршрутизации трафика
-* Внешний запрос → белый IP роутера → проброс порта → Docker‑хост → соответствующий контейнер.
-* Внутренняя коммуникация между контейнерами происходит напрямую через Docker‑сеть nextcloud_network.
+## Architecture and network connectivity
+A domain has been purchased from Reg.ru, and an SSL certificate has been issued there. A mail server is configured on Reg.ru. The domain name is linked to the public IP address of the Keenetic router. Port forwarding for all services is set up on the router:
 
-## Контейнеры и их назначение
-* postgres - База данных для Nextcloud и OnlyOffice
-* redis Кэш и хранение контекста для бота
-* nextcloud Основной веб‑интерфейс Nextcloud
-* worker - Фоновые задачи (cron, AI‑помощник)
-* bot Чат‑бот для Nextcloud Talk (интеграция с Redis и Yandex GPT)
-* onlyoffice - Онлайн‑редактор документов
-* coturn - STUN/TURN‑сервер для видеозвонков
+* Nextcloud: port $8080$ (HTTP), port $443$ (HTTPS);
+* OnlyOffice: port $8000$ (HTTP), port $8443$ (HTTPS);
+* Coturn: port $3478$ (UDP/TCP), port $5349$ (TCP);
+* Bot: port $3000$.
 
-## Приложения и функционал Nextcloud
-* Регистрация и аутентификация:
-    * Регистрация через электронную почту.
-    * Подтверждение по ссылке с одноразовым кодом.
-    * Сброс пароля через email.
-* Базовые возможности:
-    * Личное облако (файлы, папки).
-    * Совместная работа с офисными документами (через OnlyOffice).
-    * Просмотр PDF, аудиоплеер.
-    * Календарь и события.
-    * Игра Doom прямо в браузере (как Easter egg).
-    * Nextcloud Talk:
-        * Текстовый чат.
-        * Видеозвонки (с использованием Coturn для NAT‑траверсала).
-        * Интеграция с чат‑ботом.
-* AI‑помощник:
-    * Работает через API‑модель Mistral.
-    * Выполняет фоновые задачи через контейнер worker.
-* Чат‑бот в Nextcloud Talk:
-    * Добавляется в любой чат.
-    * Сохраняет контекст диалога (до 10 последних сообщений).
-    * Поддерживает команду /reset для очистки контекста.
-    * Отвечает на сообщения, используя Yandex GPT.
+## Traffic routing logic
+* An external request goes to the router’s public IP → port forwarding → Docker host → the corresponding container.
+* Internal communication between containers takes place directly via the Docker network `nextcloud_network`.
 
-## Скриншоты
-![Home](https://github.com/yarkozloff/nextcloud/blob/main/img/image1.png)
-![Talk](https://github.com/yarkozloff/nextcloud/blob/main/img/image2.png)
-![Files](https://github.com/yarkozloff/nextcloud/blob/main/img/image3.png)
-![Office](https://github.com/yarkozloff/nextcloud/blob/main/img/image4.png)
-![Photo](https://github.com/yarkozloff/nextcloud/blob/main/img/image5.png)
-![Calendar](https://github.com/yarkozloff/nextcloud/blob/main/img/image6.png)
-![Doom](https://github.com/yarkozloff/nextcloud/blob/main/img/image7.png)
+## Containers and their purposes
+* `postgres` — database for Nextcloud and OnlyOffice;
+* `redis` — cache and context storage for the bot;
+* `nextcloud` — main Nextcloud web interface;
+* `worker` — background tasks (cron jobs, AI assistant);
+* `bot` — chatbot for Nextcloud Talk (integrated with Redis and Yandex GPT);
+* `onlyoffice` — online document editor;
+* `coturn` — STUN/TURN server for video calls.
+
+## Nextcloud apps and functionality
+
+### Registration and authentication
+* Registration via email.
+* Verification via a link with a one‑time code.
+* Password reset via email.
+
+### Core features
+* Personal cloud (files and folders).
+* Collaborative editing of office documents (via OnlyOffice).
+* PDF viewer and audio player.
+* Calendar and events.
+* Doom game directly in the browser (as an Easter egg).
+
+### Nextcloud Talk
+* Text chat.
+* Video calls (using Coturn for NAT traversal).
+* Integration with the chatbot.
+
+### AI assistant
+* Operates via the Mistral API model.
+* Handles background tasks via the `worker` container.
+
+### Chatbot in Nextcloud Talk
+* Can be added to any chat.
+* Stores conversation context (up to the last 10 messages).
+* Supports the `/reset` command to clear the context.
+* Replies to messages using Yandex GPT.
+
+## Screenshots
+![Home](https://github.com/yarkozloff/nextcloud/blob/main/img/image1.png)  
+![Talk](https://github.com/yarkozloff/nextcloud/blob/main/img/image2.png)  
+![Files](https://github.com/yarkozloff/nextcloud/blob/main/img/image3.png)  
+![Office](https://github.com/yarkozloff/nextcloud/blob/main/img/image4.png)  
+![Photo](https://github.com/yarkozloff/nextcloud/blob/main/img/image5.png)  
+![Calendar](https://github.com/yarkozloff/nextcloud/blob/main/img/image6.png)  
+![Doom](https://github.com/yarkozloff/nextcloud/blob/main/img/image7.png)  
 ![VideoCall](https://github.com/yarkozloff/nextcloud/blob/main/img/image8.png)
